@@ -1,8 +1,8 @@
 #NOTE: This script will demonstrate the power of distributional centrality via RATE measures. Specifically it compares:
 #(1) L1- regularized lasso regression; 
 #(2) L2-regularized ridge regression;
-#(3) The combined regularization utilized by the elastic net (Waldmann et al., 2013); 
-#(4) A commonly used spike and slab prior model, also known as Bayesian variable selection regression (e.g. Guan and Stephens, 2011), which computes posterior inclusion probabilities (PIPs) for each covariate as a mixture of a point mass at zero and a diffuse normal centered around zero
+#(3) The combined regularization utilized by the elastic net;
+#(4) A commonly used spike and slab prior model, also known as Bayesian variable selection regression, which computes posterior inclusion probabilities (PIPs) for each covariate as a mixture of a point mass at zero and a diffuse normal centered around zero.
 
 #NOTE: This script is based on a simple (and small) genetics example where we simulate 
 #genotype data for n = 100 individuals with p = 250 correlated genetic variants. We randomly 

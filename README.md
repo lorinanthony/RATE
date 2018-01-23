@@ -16,6 +16,8 @@ The RATE tutorial and examples requires the installation of the following R libr
 
 [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo/index.html)
 
+[RcppParallel](https://cran.r-project.org/web/packages/RcppParallel/index.html)
+
 [adegenet](https://github.com/thibautjombart/adegenet/wiki) (via GitHub)
 
 [BAKR](https://github.com/lorinanthony/BAKR) (via GitHub)
@@ -34,6 +36,8 @@ The code in this repository assumes that basic C++ functions and applications ar
 For macOS users, the Xcode Command Line Tools include a GCC compiler. Instructions on how to install Xcode may be found [here](http://railsapps.github.io/xcode-command-line-tools.html). For extra tips on how to run C++ on macOS, please visit [here](http://seananderson.ca/2013/11/18/rcpp-mavericks.html). For tips on how to avoid errors dealing with "-lgfortran" or "-lquadmath", please visit [here](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/).
 
 ### Demonstrations and Tutorials for Running RATE
+
+We provide a few example scripts that demonstrate how to conduct variable selection in nonlinear models with RATE measures. Here, we consider a simple (and small) genetics example where we simulate genotype data for n = 500 individuals with p = 25 measured genetic variants. We then randomly select a small number of these predictor variables to be causal and have true association with the generated (continuous) phenotype. These scripts specifically walk through: (1) how to compute a covariance matrix using the Gaussian kernel function; (2) how to fit a standard Bayesian Gaussian process (GP) regression model; (3) retrieving effect size analogue estimates for the original predictor variables; and (4) prioritizing variables via their first, second, third, and fourth order centrality.
 
 ### Relevant Citations
 L. Crawford, S.R. Flaxman, D.E. Runcie, and M. West (2018). Predictor variable prioritization in nonlinear models: A genetic association case study. arXiv.

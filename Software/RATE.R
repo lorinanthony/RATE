@@ -19,6 +19,7 @@ RATE = function(mu = mu, Sigma = Sigma, Lambda = Lambda, nullify = NULL, snp.nms
   ### Install the necessary libraries ###
   usePackage("doParallel")
   usePackage("MASS")
+  usePackage("Matrix")
   
   ### Determine the number of Cores for Parallelization ###
   if(cores > 1){
@@ -33,8 +34,8 @@ RATE = function(mu = mu, Sigma = Sigma, Lambda = Lambda, nullify = NULL, snp.nms
   KLD = foreach(j = int)%dopar%{
     q = unique(c(l,j))
     m = mu[q]
-    alpha = t(Lambda[-q,q])%*%ginv(Lambda[-q,-q])%*%Lambda[-q,q]
-    kld = (-log(det(Sigma[-q,-q]%*%Lambda[-q,-q]))+sum(Sigma[-q,-q]*Lambda[-q,-q])+length(q)-length(mu)+t(m)%*%alpha%*%m)/2
+    alpha = t(Lambda[-q,q])%*%ginv(as.matrix(nearPD(Lambda[-q,-q])$mat))%*%Lambda[-q,q]
+    kld = (t(m)%*%alpha%*%m)/2
     names(kld) = snp.nms[j]
     kld
   }

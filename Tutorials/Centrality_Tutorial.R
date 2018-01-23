@@ -108,7 +108,7 @@ beta.tilde.draws = t(ginv(X) %*% t(fhat.rep)) #Posterior Draws
 
 ### Find the Approximate Posterior Mean, Covariance, and Precision ###
 mu = colMeans(beta.tilde.draws)
-Sigma = cov(beta.tilde.draws)
+Sigma = cov(beta.tilde.draws); Sigma = as.matrix(nearPD(Sigma)$mat)
 Lambda = ginv(Sigma)
 
 ### NOTE: Sometimes it is worth using the shrinkage version of the covariance matrix V = cov.shrink(V). This can help stabilize the KLD and RATE computations ### 

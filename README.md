@@ -4,7 +4,9 @@ Our ability to build good predictive models has, in many cases, outstripped our 
 RATE is implemented as a set of parallelizable R and C++ routines, which can be carried out within an R environment. Supporting Information for Crawford et al. (2018) can also be found under the directory SI.
 
 ### R Packages Required for RATE
-The RATE tutorial and examples requires the installation of the following R libraries:
+The RATE function software requires the installation of the following R libraries:
+
+[BAKR](https://github.com/lorinanthony/BAKR) (via GitHub)
 
 [corpcor](https://cran.r-project.org/web/packages/corpcor/index.html)
 
@@ -12,15 +14,13 @@ The RATE tutorial and examples requires the installation of the following R libr
 
 [MASS](https://cran.r-project.org/web/packages/MASS/index.html)
 
+[Matrix](https://cran.r-project.org/web/packages/Matrix/index.html)
+
 [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html)
 
 [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo/index.html)
 
 [RcppParallel](https://cran.r-project.org/web/packages/RcppParallel/index.html)
-
-[adegenet](https://github.com/thibautjombart/adegenet/wiki) (via GitHub)
-
-[BAKR](https://github.com/lorinanthony/BAKR) (via GitHub)
 
 Unless stated otherwise, the easiest method to install many of these packages is with the following example command entered in an R shell:
 

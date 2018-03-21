@@ -9,6 +9,9 @@
 #'snp.nms' is an optional vector specifying the names of the predictor variables;
 #'cores' is a parameter detailing the number of cores to parallelize over. If too many are assigned, RATE will set this variable to maximum number of cores that are available on the operating machine.
 
+#NOTE: As decribed in the Supplementary Material of Crawford et al. (2018), we implement different matrix factorizations
+#for two cases: (i) n > p, and (ii) n < p. Again, n is the number of samples and p is the number of predictors.
+
 ######################################################################################
 ######################################################################################
 ######################################################################################

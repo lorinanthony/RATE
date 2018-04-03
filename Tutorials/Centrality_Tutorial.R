@@ -46,7 +46,7 @@ sourceCpp("BAKRGibbs.cpp")
 ### Set the random seed to reproduce research ###
 set.seed(11151990)
 
-n = 100; p = 250; pve=0.75; rho=0.5;
+n = 250; p = 500; pve=0.75; rho=0.5;
 ncausal1= 3 #Set 1 of causal SNPs
 
 ncausal = ncausal1
@@ -129,7 +129,7 @@ ESS = res$ESS
 
 ### Plot the results with the uniformity line ###
 barplot(rates,xlab = "Covariates",ylab=expression(RATE(tilde(beta)[j])),names.arg ="",col = ifelse(c(1:p)%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
-lines(x = -0.5:30.5,y = rep(1/(p-length(nl)),32),col = "red",lty=2,lwd=2)
+lines(x = -0.5:(p*1.5),y = rep(1/(p-length(nl)),p+1),col = "red",lty=2,lwd=2)
 legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")
 
 ######################################################################################
@@ -148,7 +148,7 @@ ESS = res2$ESS
 
 ### Plot the results with the uniformity line ###
 barplot(rates,xlab = "Covariates",ylab=bquote(RATE(tilde(beta)[j]~"|"~tilde(beta)[.(as.integer(nl))]=="0")),names.arg = "",col = ifelse(c(1:p)[-nl]%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
-lines(x = -0.5:29.5,y = rep(1/(p-length(nl)),31),col = "red",lty=2,lwd=2)
+lines(x = -0.5:((p-1)*1.5),y = rep(1/(p-length(nl)),(p-1)+1),col = "red",lty=2,lwd=2)
 legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")
 
 ######################################################################################
@@ -169,7 +169,7 @@ ESS = res3$ESS
 
 ### Plot the results with the uniformity line ###
 barplot(rates,xlab = "Covariates",ylab=bquote(RATE(tilde(beta)[j]~"|"~tilde(beta)[.(as.integer(nl))]=="0")),names.arg = "",col = ifelse(c(1:p)[-nl]%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
-lines(x = -0.5:28.5,y = rep(1/(p-length(nl)),30),col = "red",lty=2,lwd=2)
+lines(x = -0.5:((p-2)*1.5),y = rep(1/(p-length(nl)),(p-2)+1),col = "red",lty=2,lwd=2)
 legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")
 
 ######################################################################################
@@ -190,5 +190,5 @@ ESS = res4$ESS
 
 ### Plot the results with the uniformity line ###
 barplot(rates,xlab = "Covariates",ylab=bquote(RATE(tilde(beta)[j]~"|"~tilde(beta)[.(as.integer(nl))]=="0")),names.arg = "",col = ifelse(c(1:p)[-nl]%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
-lines(x = -0.5:27.5,y = rep(1/(p-length(nl)),29),col = "red",lty=2,lwd=2)
+lines(x = -0.5:((p-3)*1.5),y = rep(1/(p-length(nl)),(p-3)+1),col = "red",lty=2,lwd=2)
 legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")

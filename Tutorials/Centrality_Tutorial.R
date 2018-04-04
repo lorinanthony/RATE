@@ -4,8 +4,8 @@
 #(3) Prioritize variables via their first, second, third, and fourth order distributional centrality.
 
 #NOTE: This script is based on a simple (and small) genetics example where we simulate 
-#genotype data for n = 500 individuals with p = 25 measured genetic variants. We randomly 
-#assume the last three predictors p∗ = {23, 24, 25} are causal and have true association with 
+#genotype data for n individuals with p measured genetic variants. We randomly
+#assume that three of the predictors p∗ = {23, 24, 25} are causal and have true association with 
 #the generated (continuous) phenotype y. We then assume that the p* predictive markers 
 #explain a fixed H2 % (phenotypic variance explained; PVE) of the total variance in the 
 #response V(y). This parameter H2 can alternatively be described as a factor controlling the 

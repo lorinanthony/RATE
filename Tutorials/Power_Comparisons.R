@@ -81,7 +81,7 @@ compute.power <- function(pvals,SNPs){
 set.seed(11151990)
 
 ### Specify the Number of Samples and Genetic Markers ###
-n = 500; p = 2500; 
+n = 500; nsnp = 2500; 
 
 ### Set up simulation parameters ###
 pve=0.6; rho=0.5; pc.var = 0; ncausal = 30

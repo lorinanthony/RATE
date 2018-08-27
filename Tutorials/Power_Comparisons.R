@@ -6,7 +6,7 @@
 #(4) A genome scan with individual single nucleotide polymorphisms (SNPs) fit via a univariate linear model (SCANONE).
 
 #NOTE: This script is based on the genetics simulations from Crawford et al. (2018). Here, we simulate 
-#genotype data for n = 500 individuals with p = 2500 independent genetic variants. We randomly 
+#genotype data for n = 2500 individuals with p = 10000 independent genetic variants. We randomly 
 #assume that j∗ = 30 are causal and have true association with the generated (continuous)
 #phenotype y. We then assume that the j* predictor variables explain a fixed H2%
 #(phenotypic variance explained; PVE) of the total variance in the response V(y). This
@@ -84,12 +84,11 @@ set.seed(11151990)
 n = 500; nsnp = 2500; 
 
 ### Set up simulation parameters ###
-pve=0.6; rho=0.5; pc.var = 0; ncausal = 30
+pve=0.3; rho=0.5; pc.var = 0; ncausal = 30
 
 ### The Number of Causal Variables ###
-ncausal1= 10 #Set 1 of causal SNPs 
-ncausal2 = 10 #Set 2 of Causal SNPs
-ncausal3 = ncausal-(ncausal1+ncausal2) #Set 3 of Causal SNPs with only marginal effects
+ncausal1= ncausal/6 #Set 1 of causal SNPs 
+ncausal2 = ncausal-ncausal1 #Set 2 of Causal SNPs
 
 ### Generate the data ###
 maf <- 0.05 + 0.45*runif(nsnp)
@@ -101,7 +100,6 @@ s=sample(1:nsnp,ncausal,replace = FALSE)
 #Select Causal SNPs
 s1=sample(s, ncausal1, replace=F)
 s2=sample(s[s%in%s1==FALSE], ncausal2, replace=F)
-s3=sample(s[s%in%c(s1,s2)==FALSE], ncausal3, replace=F)
 
 #Generate the ground-truth regression coefficients for the variables (X). 
 #Adjust the effects so that the variables (SNPs) explain x percent of the variance in the outcome.
@@ -114,8 +112,8 @@ for(i in 1:ncausal1){
 dim(Xepi)
 
 # Marginal Effects Only
-Xmarginal=cbind(X[,s],X[,-s])
-beta=c(rnorm(dim(X[,s])[2]),rnorm(nsnp-length(s),sd = 1e-3^2))
+Xmarginal=cbind(X[,s])
+beta=rnorm(dim(X[,s])[2])
 y_marginal=c(Xmarginal%*%beta)
 beta=beta*sqrt(pve*rho/var(y_marginal))
 y_marginal=Xmarginal%*%beta
@@ -159,15 +157,22 @@ colnames(X) = paste("SNP",1:ncol(X),sep="")
 #(2) The bandwidth (also known as a smoothing parameter or lengthscale) h. For example, the 
 #Gaussian kernel can be specified as k(u,v) = exp{||u−v||^2/2h^2}.
 
-h = median(as.matrix(dist(X)))
-Kn = GaussKernel(t(X),1/(h^2*2)); diag(Kn)=1 # 
+Kn = GaussKernel(t(X)); diag(Kn) = 1
+
+v=matrix(1, ind, 1)
+M=diag(ind)-v%*%t(v)/ind
+Kn=M%*%Kn%*%M
+Kn=Kn/mean(diag(Kn))
 
 ### Set up the desired number of posterior draws ###
-mcmc.iter = 1e4
+### Defined extra parameters needed to run the analysis ###
+n = dim(X)[1] #Sample size
+p = dim(X)[2] #Number of markers or genes
 
-### Fit the GP Regression ###
-fhat = Kn %*% solve(Kn + diag(n), y) #Posterior mean
-fhat.rep = rmvnorm(mcmc.iter,fhat,Kn - Kn %*% solve(Kn+ diag(n),Kn))
+### Gibbs Sampler ###
+sigma2 = 1e-3
+fhat = Kn %*% solve(Kn + diag(sigma2,n), y)
+fhat.rep = rmvnorm(5e3,fhat,Kn - Kn %*% solve(Kn+diag(sigma2,n),Kn))
 
 #NOTE: We formally define the effect size analogue as the result of projecting the design 
 #matrix X onto the nonlinear response vector f, where beta = Proj(X,f) = X^+f with X^+ 
@@ -178,11 +183,11 @@ fhat.rep = rmvnorm(mcmc.iter,fhat,Kn - Kn %*% solve(Kn+ diag(n),Kn))
 ######################################################################################
 
 ### Compute the First Order Centrality of each Predictor Variable ###
-cores = cores=detectCores()
+cores = detectCores()
 
 ### Run the RATE Function ###
 nl = NULL
-res = RATE(X=X,f.draws=fhat.rep,snp.nms = colnames(X),cores = cores)
+res = RATE(X=X,f.draws=fhat.rep,rank.r=n/4,snp.nms = colnames(X),cores = cores)
 
 #The function results in a list with: 
 #(1) The raw Kullback-Leibler divergence measures (RATE$KLD); 

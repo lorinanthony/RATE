@@ -6,7 +6,7 @@
 #(4) A genome scan with individual single nucleotide polymorphisms (SNPs) fit via a univariate linear model (SCANONE).
 
 #NOTE: This script is based on the genetics simulations from Crawford et al. (2018). Here, we simulate 
-#genotype data for n = 2500 individuals with p = 10000 independent genetic variants. We randomly 
+#genotype data for n = 2000 individuals with p = 10000 independent genetic variants. We randomly
 #assume that j∗ = 30 are causal and have true association with the generated (continuous)
 #phenotype y. We then assume that the j* predictor variables explain a fixed H2%
 #(phenotypic variance explained; PVE) of the total variance in the response V(y). This
@@ -81,7 +81,7 @@ compute.power <- function(pvals,SNPs){
 set.seed(11151990)
 
 ### Specify the Number of Samples and Genetic Markers ###
-n = 2500; nsnp = 1e4; 
+n = 2e3; nsnp = 1e4; 
 
 ### Set up simulation parameters ###
 pve=0.3; rho=0.5; pc.var = 0; ncausal = 30

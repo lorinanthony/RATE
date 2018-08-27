@@ -23,7 +23,6 @@ cat("\014")
 rm(list = ls(all = TRUE))
 
 ### Load in the R libraries ###
-library(adegenet)
 library(corpcor)
 library(doParallel)
 library(MASS)
@@ -46,20 +45,21 @@ sourceCpp("BAKRGibbs.cpp")
 ### Set the random seed to reproduce research ###
 set.seed(11151990)
 
-n = 250; p = 500; pve=0.75; rho=0.5;
-ncausal1= 3 #Set 1 of causal SNPs
+n = 2e3; p = 25; pve=0.6; rho=1;
 
-ncausal = ncausal1
+### Define the Number of Causal SNPs
+ncausal = 3
 
+### Simulate Synthetic Data ###
 maf <- 0.05 + 0.45*runif(p)
 X   <- (runif(n*p) < maf) + (runif(n*p) < maf)
 X   <- matrix(as.double(X),n,p,byrow = TRUE)
 Xmean=apply(X, 2, mean); Xsd=apply(X, 2, sd); X=t((t(X)-Xmean)/Xsd)
 s=c(23:25)
 
-# Marginal Effects Only
+#Marginal Effects Only
 Xmarginal=X[,s]
-beta1=rep(1,ncausal) #0.5,0.5)
+beta1=rep(1,ncausal)
 y_marginal=c(Xmarginal%*%beta1)
 beta1=beta1*sqrt(pve*rho/var(y_marginal))
 y_marginal=Xmarginal%*%beta1
@@ -71,7 +71,7 @@ y_epi=c(Xepi%*%beta2)
 beta2=beta2*sqrt(pve*(1-rho)/var(y_epi))
 y_epi=Xepi%*%beta2
 
-# error
+#Error Terms
 y_err=rnorm(n)
 y_err=y_err*sqrt((1-pve)/var(y_err))
 
@@ -91,30 +91,38 @@ colnames(X) = paste("SNP",1:ncol(X),sep="")
 #(2) The bandwidth (also known as a smoothing parameter or lengthscale) h. For example, the 
 #Gaussian kernel can be specified as k(u,v) = exp{||u−v||^2/2h^2}.
 
-h = median(as.matrix(dist(X)))
-Kn = GaussKernel(t(X),1/(h^2*2)); diag(Kn)=1 # 
+n = dim(X)[1] #Sample size
+p = dim(X)[2] #Number of markers or genes
 
-### Set up the desired number of posterior draws ###
-mcmc.iter = 1e4
+### Find the Approximate Basis and Kernel Matrix; Choose N <= D <= P ###
+Kn = GaussKernel(t(X)); diag(Kn)=1 # 
 
-### Fit the GP Regression ###
-fhat = Kn %*% solve(Kn + diag(n), y) #Posterior mean
-fhat.rep = rmvnorm(mcmc.iter,fhat,Kn - Kn %*% solve(Kn+ diag(n),Kn))
+### Center and Scale K_tilde ###
+v=matrix(1, n, 1)
+M=diag(n)-v%*%t(v)/n
+Kn=M%*%Kn%*%M
+Kn=Kn/mean(diag(Kn))
 
-#NOTE: We formally define the effect size analogue as the result of projecting the design 
-#matrix X onto the nonlinear response vector f, where beta = Proj(X,f) = X^+f with X^+ 
-#symbolizing the Moore-Penrose generalized inverse.
+### Gibbs Sampler ###
+sigma2 = 1e-3
+fhat = Kn %*% solve(Kn + diag(sigma2,n), y)
+fhat.rep = rmvnorm(1e4,fhat,Kn - Kn %*% solve(Kn+diag(sigma2,n),Kn))
 
 ######################################################################################
 ######################################################################################
 ######################################################################################
 
-### Compute the First Order Centrality of each Predictor Variable ###
-cores = cores=detectCores()
+### Compute the KL Divergence to find Marginal Importance ###
+cores = detectCores()
+registerDoParallel(cores=cores)
 
 ### Run the RATE Function ###
 nl = NULL
 res = RATE(X=X,f.draws=fhat.rep,snp.nms = colnames(X),cores = cores)
+
+#NOTE: We formally define the effect size analogue as the result of projecting the design 
+#matrix X onto the nonlinear response vector f, where beta = Proj(X,f) = X^+f with X^+ 
+#symbolizing the Moore-Penrose generalized inverse.
 
 #The function results in a list with: 
 #(1) The raw Kullback-Leibler divergence measures (RATE$KLD); 
@@ -128,13 +136,16 @@ DELTA = res$Delta
 ESS = res$ESS
 
 ### Plot the results with the uniformity line ###
+par(mar=c(5,5,4,2))
 barplot(rates,xlab = "Covariates",ylab=expression(RATE(tilde(beta)[j])),names.arg ="",col = ifelse(c(1:p)%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
 lines(x = 0:length(rates)*1.5,y = rep(1/(p-length(nl)),length(rates)+1),col = "red",lty=2,lwd=2)
-legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")
+legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 19,cex = 1.25,col = "red")
 
 ######################################################################################
 ######################################################################################
 ######################################################################################
+
+### Find Second Order Centrality by Nullifying the Top Associated Predictor Variable ###
 
 ### Run the RATE Function ###
 top = substring(names(res$KLD)[order(res$KLD,decreasing=TRUE)[1]],first = 4)
@@ -147,15 +158,16 @@ DELTA = res2$Delta
 ESS = res2$ESS
 
 ### Plot the results with the uniformity line ###
+par(mar=c(5,5,4,2))
 barplot(rates,xlab = "Covariates",ylab=bquote(RATE(tilde(beta)[j]~"|"~tilde(beta)[.(as.integer(nl))]=="0")),names.arg = "",col = ifelse(c(1:p)[-nl]%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
 lines(x = 0:length(rates)*1.5,y = rep(1/(p-length(nl)),length(rates)+1),col = "red",lty=2,lwd=2)
-legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")
+legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 19,cex = 1.25,col = "red")
 
 ######################################################################################
 ######################################################################################
 ######################################################################################
 
-### Find Third Order Centrality by Nullifying the most Associated Predictor Variable ###
+### Find Third Order Centrality by Nullifying the Top 2 Associated Predictor Variables ###
 
 ### Run the RATE Function ###
 top = substring(names(res2$KLD)[order(res2$KLD,decreasing=TRUE)[1]],first = 4)
@@ -168,15 +180,16 @@ DELTA = res3$Delta
 ESS = res3$ESS
 
 ### Plot the results with the uniformity line ###
+par(mar=c(5,5,4,2))
 barplot(rates,xlab = "Covariates",ylab=bquote(RATE(tilde(beta)[j]~"|"~tilde(beta)[.(as.integer(nl))]=="0")),names.arg = "",col = ifelse(c(1:p)[-nl]%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
 lines(x = 0:length(rates)*1.5,y = rep(1/(p-length(nl)),length(rates)+1),col = "red",lty=2,lwd=2)
-legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")
+legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 19,cex = 1.25,col = "red")
 
 ######################################################################################
 ######################################################################################
 ######################################################################################
 
-### Find Fourth Order Centrality by Nullifying the most Associated Predictor Variable ###
+### Find Fourth Order Centrality by Nullifying the Top 3 Associated Predictor Variables ###
 
 ### Run the RATE Function ###
 top = substring(names(res3$KLD)[order(res3$KLD,decreasing=TRUE)[1]],first = 4)
@@ -189,6 +202,7 @@ DELTA = res4$Delta
 ESS = res4$ESS
 
 ### Plot the results with the uniformity line ###
+par(mar=c(5,5,4,2))
 barplot(rates,xlab = "Covariates",ylab=bquote(RATE(tilde(beta)[j]~"|"~tilde(beta)[.(as.integer(nl))]=="0")),names.arg = "",col = ifelse(c(1:p)[-nl]%in%s,"blue","grey80"),border=NA,cex.names = 0.6,ylim=c(0,0.6),cex.lab=1.25,cex.axis = 1.25)
 lines(x = 0:length(rates)*1.5,y = rep(1/(p-length(nl)),length(rates)+1),col = "red",lty=2,lwd=2)
-legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 20,col = "red")
+legend("topleft",legend=c(as.expression(bquote(DELTA~"="~.(round(DELTA,3)))),as.expression(bquote("ESS ="~.(round(ESS,2))*"%"))),bty = "n",pch = 19,cex = 1.25,col = "red")

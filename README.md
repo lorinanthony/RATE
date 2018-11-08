@@ -40,7 +40,7 @@ For macOS users, the Xcode Command Line Tools include a GCC compiler. Instructio
 We provide a few example scripts that demonstrate how to conduct variable selection in nonlinear models with RATE measures. Here, we consider a simple (and small) genetics example where we simulate genotype data for _n_ individuals with _p_ measured genetic variants. We then randomly select a small number of these predictor variables to be causal and have true association with the generated (continuous) phenotype. These scripts are meant to illustrate proof of concepts and specifically walk through: (1) how to compute a covariance matrix using the Gaussian kernel function; (2) how to fit a standard Bayesian Gaussian process (GP) regression model; and (3) prioritizing variables via their first, second, third, and fourth order distributional centrality.
 
 ### Relevant Citations
-L. Crawford, S.R. Flaxman, D.E. Runcie, and M. West (2018). Variable prioritization in nonlinear black box methods: a genetic association case study. arXiv. 1801.07318.
+L. Crawford, S.R. Flaxman, D.E. Runcie, and M. West (2018). Variable prioritization in nonlinear black box methods: a genetic association case study. _Annals of Applied Statistics_. In Press.
 
 ### Questions and Feedback
 For questions or concerns with the RATE functions, please contact [Lorin Crawford](mailto:lorin_crawford@brown.edu).

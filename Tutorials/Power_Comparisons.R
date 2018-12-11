@@ -81,7 +81,7 @@ compute.power <- function(pvals,SNPs){
 set.seed(11151990)
 
 ### Specify the Number of Samples and Genetic Markers ###
-n = 2e3; nsnp = 1e4; 
+n = 2e3; p = 1e4;
 
 ### Set up simulation parameters ###
 pve=0.3; rho=0.5; pc.var = 0; ncausal = 30
@@ -91,11 +91,11 @@ ncausal1= ncausal/6 #Set 1 of causal SNPs
 ncausal2 = ncausal-ncausal1 #Set 2 of Causal SNPs
 
 ### Generate the data ###
-maf <- 0.05 + 0.45*runif(nsnp)
-X   <- (runif(ind*nsnp) < maf) + (runif(ind*nsnp) < maf)
-X   <- matrix(as.double(X),ind,nsnp,byrow = TRUE); Geno = X
+maf <- 0.05 + 0.45*runif(p)
+X   <- (runif(n*p) < maf) + (runif(n*p) < maf)
+X   <- matrix(as.double(X),n,p,byrow = TRUE); Geno = X
 Xmean=apply(X, 2, mean); Xsd=apply(X, 2, sd); X=t((t(X)-Xmean)/Xsd)
-s=sample(1:nsnp,ncausal,replace = FALSE)
+s=sample(1:p,ncausal,replace = FALSE)
 
 #Select Causal SNPs
 s1=sample(s, ncausal1, replace=F)
@@ -134,7 +134,7 @@ beta=beta*sqrt(pc.var/var(y_pcs))
 y_pcs=PCs%*%beta
 
 ### Error Term ###
-y_err=rnorm(ind)
+y_err=rnorm(n)
 y_err=y_err*sqrt((1-pve-pc.var)/var(y_err))
 
 ### Simulate the Response ###
@@ -159,8 +159,8 @@ colnames(X) = paste("SNP",1:ncol(X),sep="")
 
 Kn = GaussKernel(t(X)); diag(Kn) = 1
 
-v=matrix(1, ind, 1)
-M=diag(ind)-v%*%t(v)/ind
+v=matrix(1, n, 1)
+M=diag(n)-v%*%t(v)/n
 Kn=M%*%Kn%*%M
 Kn=Kn/mean(diag(Kn))
 

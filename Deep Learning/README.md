@@ -1,6 +1,6 @@
 # Variable Importance for Bayesian Neural Networks
 
-Here, we demonstrate how to implement RATE with the Bayesian neural network architecture described in [Ish-Horowicz et al. (2019)](https://arxiv.org/abs/1901.09839). The `Notebooks` directory contains notebooks used to generate each of the plots in the paper. These are meant to serve as examples of how to build and train Bayesian neural networks and determine variable importance for its input features.
+Here, we demonstrate how to implement RATE with Bayesian neural network architectures as described in [Ish-Horowicz et al. (2019)](https://arxiv.org/abs/1901.09839). The `Notebooks` directory contains notebooks used to generate the results and plots in the paper. These are meant to serve as examples of how to build and train Bayesian neural networks and determine variable importance for its input features.
 
 The source code in `src` organized as follows:
 * `BayesNN.py` contains a class implementing the Bayesian neural network.

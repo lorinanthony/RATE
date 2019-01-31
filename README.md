@@ -6,21 +6,21 @@ RATE is implemented as a set of parallelizable routines, which can be carried ou
 ### R Packages Required for RATE
 The RATE function software requires the installation of the following R libraries:
 
-*[BAKR](https://github.com/lorinanthony/BAKR) (via GitHub)
+* [BAKR](https://github.com/lorinanthony/BAKR) (via GitHub)
 
-*[corpcor](https://cran.r-project.org/web/packages/corpcor/index.html)
+* [corpcor](https://cran.r-project.org/web/packages/corpcor/index.html)
 
-*[doParallel](https://cran.r-project.org/web/packages/doParallel/index.html)
+* [doParallel](https://cran.r-project.org/web/packages/doParallel/index.html)
 
-*[MASS](https://cran.r-project.org/web/packages/MASS/index.html)
+* [MASS](https://cran.r-project.org/web/packages/MASS/index.html)
 
-*[Matrix](https://cran.r-project.org/web/packages/Matrix/index.html)
+* [Matrix](https://cran.r-project.org/web/packages/Matrix/index.html)
 
-*[Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html)
+* [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html)
 
-*[RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo/index.html)
+* [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo/index.html)
 
-*[RcppParallel](https://cran.r-project.org/web/packages/RcppParallel/index.html)
+* [RcppParallel](https://cran.r-project.org/web/packages/RcppParallel/index.html)
 
 Unless stated otherwise, the easiest method to install many of these packages is with the following example command entered in an R shell:
 

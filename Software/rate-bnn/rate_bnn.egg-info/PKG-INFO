@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: rate-bnn
+Version: 0.0.1
+Summary: UNKNOWN
+Home-page: https://github.com/lorinanthony/RATE
+Author: Jonathan Ish-Horowicz
+Author-email: jonathan.ish-horowicz17@imperial.ac.uk
+License: UNKNOWN
+Description: # RATE
+        
+        This is a Python package.
+        
+        # Installation
+        
+        In this directory, use the command `python setup.py install`.
+        
+        # Uninstalltion
+        
+        Use `pip uninstall rate`.
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown

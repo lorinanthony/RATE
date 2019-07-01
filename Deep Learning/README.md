@@ -4,4 +4,4 @@ Here, we demonstrate how to implement RATE with Bayesian neural network architec
 
 # Installation
 
-To run the notebooks please install the Python code in the (Software/rate-bnn)[../Software/rate-bnn] directory.
+To run the notebooks please install the Python code in the (Software/rate-bnn)[https://github.com/lorinanthony/RATE/tree/master/Software/rate-bnn] directory.

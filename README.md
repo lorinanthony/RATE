@@ -42,7 +42,7 @@ In the `Tutorials` directory, we provide a few example scripts that demonstrate 
 In the `Deep Learning` directory, we demonstrate how to implement RATE with Bayesian neural network architectures. Notebooks are provided to give explicit details on training procedures and how to determine variable importance for the input features of networks.
 
 ### Relevant Citations
-L. Crawford, S.R. Flaxman, D.E. Runcie, and M. West (2019). Variable prioritization in nonlinear black box methods: a genetic association case study. _Annals of Applied Statistics_. In Press.
+L. Crawford, S.R. Flaxman, D.E. Runcie, and M. West (2019). Variable prioritization in nonlinear black box methods: a genetic association case study. _Annals of Applied Statistics_. **13**(2): 958-989.
 
 J. Ish-Horowicz*, D. Udwin*, S.R. Flaxman, S.L. Filippi, and L. Crawford (2019). Interpreting deep neural networks through variable importance. _arXiv_. 1901.09839.
 

@@ -39,25 +39,11 @@ def perm_importances(model, X, y, features=None, n_examples=None, n_mc_samples=1
 	time_taken = time.time() - start_time
 	return imp_vals, time_taken
 
-def most_common_bnn_prediction(bnn, X, n_mc_samples):
-	"""
-	Compute most common binary BNN prediction over MC samples. Deprecated - better to use soft predictions
-	"""
-	if bnn.C != 1:
-		raise ValueError("The BNN must be for binary classification (this BNN is for {} classes)".format(bnn.C))
-	bnn_predicted_proba = bnn.predict(X, n_mc_samples, return_logits=False)
-	bnn_predicted_labels = (bnn_predicted_proba > 0.5).astype(int)
-	return np.array([np.bincount(bnn_predicted_labels[:,j]).argmax() for j in range(bnn_predicted_labels.shape[1])])
-
 def mean_bnn_prediction(bnn, X, n_mc_samples):
 	"""
-	Mean logit predicted by a BNN over MC samples
+	Mean prediction by a BNN over MC samples
 	"""
-	predicted_proba = bnn.predict(X, n_mc_samples, return_logits=True)
-	print(predicted_proba.shape)
-	mean_prediction = predicted_proba.mean(axis=0)
-	print(mean_prediction.shape)
-	return(mean_prediction)
+	return bnn.predict(X, n_mc_samples, return_logits=False).mean(axis=0)
 
 def get_lm_mimic_coefficients(bnn_object, x_train, x_test=None, n_mc_samples=100):
 	"""
@@ -182,7 +168,7 @@ def get_gbm_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100,
 		best_model_only: should the best model be returned or should the CV result
 						 be returned. The CV result is the dict described at
 						 https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html
-		**kwargs: passed to RandomizedSearchCV (controls e.g. number of iterations, CV folds etc)
+		**kwargs: passed to RandomizedSearchCV (controls e.g. number of iterations (n_iter), CV folds (cv)...)
 
 	"""
 	# Grid of GBM hyperparameter choices

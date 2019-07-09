@@ -8,17 +8,7 @@ import pickle, time
 
 from tensorflow.keras.callbacks import EarlyStopping
 
-# To import scripts from different directory
-import os,sys,inspect
-current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, "/".join([parent_dir, "src"])) 
-
-from scipy.stats import rankdata, pearsonr
-from rate_bnn import *
-from utils import *
-from BayesNN_Keras import BNN_Classifier
-from mimic import *
+from rate import *
 
 #
 # Get data for binary classification, train BNN and then compute RATE

@@ -12,16 +12,7 @@ from sklearn.metrics import roc_curve, auc
 
 import time, pickle
 
-# To import scripts from different directory
-import os, sys, inspect
-current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, "/".join([parent_dir, "src"])) 
-
-from mimic import *
-from utils import *
-from BayesNN_Keras import BNN_Classifier
-from rate_bnn import *
+from rate import *
 
 n_workers = int(sys.argv[1])
 print("Using {} workers".format(n_workers))

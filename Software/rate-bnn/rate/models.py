@@ -223,9 +223,12 @@ class BNN_Regressor:
 		"""
 		return self.model.fit(X, y, callbacks=callbacks+[tf.keras.callbacks.TerminateOnNaN()], **kwargs)
         
-	def predict(self, X, n_mc_samples, **kwargs):
+	def predict(self, X, n_mc_samples, return_logits=False, **kwargs):
 		"""
 		Predict real-valued output using n_mc_samples MC samples.
+
+		The return_logits argument is to match the equivalent BNN_Classifier method - it doesn't do anything in regression
+		(the final layer activation is the identity function).
 
 		**kwargs are passed to keras.model.predict - see https://keras.io/models/model/#predict
 		"""

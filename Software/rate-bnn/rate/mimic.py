@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.linear_model import LogisticRegression
 
@@ -41,13 +41,23 @@ def perm_importances(model, X, y, features=None, n_examples=None, n_mc_samples=1
 
 def most_common_bnn_prediction(bnn, X, n_mc_samples):
 	"""
-	Compute most common binary BNN prediction over MC samples
+	Compute most common binary BNN prediction over MC samples. Deprecated - better to use soft predictions
 	"""
 	if bnn.C != 1:
 		raise ValueError("The BNN must be for binary classification (this BNN is for {} classes)".format(bnn.C))
 	bnn_predicted_proba = bnn.predict(X, n_mc_samples, return_logits=False)
 	bnn_predicted_labels = (bnn_predicted_proba > 0.5).astype(int)
 	return np.array([np.bincount(bnn_predicted_labels[:,j]).argmax() for j in range(bnn_predicted_labels.shape[1])])
+
+def mean_bnn_prediction(bnn, X, n_mc_samples):
+	"""
+	Mean logit predicted by a BNN over MC samples
+	"""
+	predicted_proba = bnn.predict(X, n_mc_samples, return_logits=True)
+	print(predicted_proba.shape)
+	mean_prediction = predicted_proba.mean(axis=0)
+	print(mean_prediction.shape)
+	return(mean_prediction)
 
 def get_lm_mimic_coefficients(bnn_object, x_train, x_test=None, n_mc_samples=100):
 	"""
@@ -79,16 +89,15 @@ def get_lm_mimic_coefficients(bnn_object, x_train, x_test=None, n_mc_samples=100
 	return lm.coef_.reshape(x_train.shape[1]), fit_time
 
 def get_rf_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100, cv_grid=None,
-	n_jobs=-1, best_model_only=True, **kwargs):
+	n_jobs=1, best_model_only=True, **kwargs):
 	"""
 	Get the random forest trained to mimic the mean
-	predictions of a Bayesian neural network. The random forest is chosen using
-	random search cross-validation with 10 iterations and 5 folds - this can be quite
-	slow but shouldn't take more than 10 minutes when parallelised over all available
-	cores (as is done by default - see n_jobs argument)
+	predictions of a Bayesian neural network. The mimic model is a regression model trained
+	trained on the soft predictions (the logits) of the BNN.
 
-	Note: this doesn't return the importances, just the best sklearn estimator according
-			to the cross-validtion. Use perm_importances() to extract the importances
+	Model selection is performed using random search cross-validation with 10 iterations and 5 folds - this can be quite
+	slow but shouldn't take more than 10 minutes when parallelised over all available
+	cores. Default behaviour is to use one core.
 	
 	Args:
 		bnn_object: an instance of the BNN class
@@ -104,9 +113,9 @@ def get_rf_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100, cv_grid=Non
 		cv_grid: dictionary of {hyperparameter : values} over which the RF will be
 				 cross-validated. Default value is None, which uses the grid defined
 				 in the source code.
-		n_jobs: the number of threads to use when running the random forest
-				cross validation. Deafult (-1) uses all available cores. Otherwise
-				select an integer to use that number of threads.
+		n_jobs: the number of threads to use when running the GBM
+				cross validation (default is 1). An integer for the number of threads or 
+				-1 for all available threads.
 		best_model_only: should the best model be returned or should the CV result
 						 be returned. The CV result is the dict described at
 						 https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html
@@ -116,17 +125,17 @@ def get_rf_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100, cv_grid=Non
 	# Grid of random forest hyperparameter choices. (Arbitrary) default
 	if cv_grid is None:
 		cv_grid = {'n_estimators': [int(x) for x in np.linspace(100, 2000, 10)],
-						'max_features': ['auto', 'sqrt'],
-						'max_depth': [int(x) for x in np.linspace(10, 110, 11)] + [None],
-						'min_samples_split': [2, 5, 10],
-						'min_samples_leaf': [1, 2, 4],
-						'bootstrap': [True, False]}
+				   'max_features': ['auto', 'sqrt'],
+				   'max_depth': [int(x) for x in np.linspace(10, 110, 11)] + [None],
+				   'min_samples_split': [2, 5, 10],
+				   'min_samples_leaf': [1, 2, 4],
+				   'bootstrap': [True, False]}
 
 	# Perform model selection using cross-validation
-	random_search = RandomizedSearchCV(estimator=RandomForestClassifier(), param_distributions=cv_grid,
+	random_search = RandomizedSearchCV(estimator=RandomForestRegressor(), param_distributions=cv_grid,
 										n_jobs=n_jobs, **kwargs)
 
-	bnn_prediction = most_common_bnn_prediction(bnn_object, x_train, n_mc_samples)
+	bnn_prediction = mean_bnn_prediction(bnn_object, x_train, n_mc_samples)
 	start_time = time.time()
 	random_search.fit(x_train, bnn_prediction)
 	cv_time = time.time() - start_time
@@ -135,25 +144,24 @@ def get_rf_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100, cv_grid=Non
 
 	# Check RF predictions against BNN predictions on held-out data, if provided
 	if x_test is not None:
-		print("Best RF model has MIMIC accuracy of {:.5f}".format(random_search.best_estimator_.score(
-					x_test, most_common_bnn_prediction(bnn_object, x_test, n_mc_samples))))
+		print("Best RF model has MIMIC R^2 of {:.5f}".format(random_search.best_estimator_.score(
+					x_test, mean_bnn_prediction(bnn_object, x_test, n_mc_samples))))
 	if best_model_only:
 		return random_search.best_estimator_, cv_time
 	else:
 		return random_search, cv_time
 
 def get_gbm_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100,
-	cv_grid=None, n_jobs=-1, best_model_only=True, **kwargs):
+	cv_grid=None, n_jobs=1, best_model_only=True, **kwargs):
 	"""
 	Get a gradient boosting machine (GBM) trained to mimic the mean
-	predictions of a Bayesian neural network. The GBM is chosen using
-	random search cross-validation with 10 iterations and 5 folds - this can be quite
-	slow but shouldn't take more than 10 minutes when parallelised over all available
-	cores (as is done by default - see n_jobs argument)
+	predictions of a Bayesian neural network. The mimic is a regression model
+	trained on the soft predictions (the prediction probabilities) of the BNN.
 
-	Note: this doesn't return the importances, just the best sklearn estimator according
-			to the cross-validtion. Use perm_importances to extract the importances
-	
+	The GBM is chosen using random search cross-validation with 10 iterations and 5 folds -
+	this can be quite slow but shouldn't take more than 10 minutes when parallelised over
+	all available cores. Default behaviour is to use one core.
+
  	Args:
 		bnn_object: an instance of the BNN class
 		x_train: array of training examples with shape (n_examples, n_features).
@@ -169,8 +177,8 @@ def get_gbm_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100,
 				 cross-validated. Default value is None, which uses the grid defined
 				 in the source code.
 		n_jobs: the number of threads to use when running the GBM
-				cross validation. Deafult (-1) uses all available cores. Otherwise
-				select an integer to use that number of threads.
+				cross validation (default is 1). An integer for the number of threads or 
+				-1 for all available threads.
 		best_model_only: should the best model be returned or should the CV result
 						 be returned. The CV result is the dict described at
 						 https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html
@@ -185,11 +193,11 @@ def get_gbm_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100,
 					'min_samples_leaf': [1, 2, 4], 
 					'max_features': ['auto', 'sqrt'] }
 
-	random_search = RandomizedSearchCV(estimator=GradientBoostingClassifier(), param_distributions=cv_grid,
+	random_search = RandomizedSearchCV(estimator=GradientBoostingRegressor(), param_distributions=cv_grid,
 		n_jobs=n_jobs, **kwargs)
 
 	# Compute most common BNN prediction over MC samples
-	bnn_prediction = most_common_bnn_prediction(bnn_object, x_train, n_mc_samples)
+	bnn_prediction = mean_bnn_prediction(bnn_object, x_train, n_mc_samples)
 	start_time = time.time()
 	random_search.fit(x_train, bnn_prediction)
 	cv_time = time.time() - start_time
@@ -198,8 +206,8 @@ def get_gbm_mimic(bnn_object, x_train, x_test=None, n_mc_samples=100,
 
 	# Check GBM predictions against BNN predictions on held-out data, if provided
 	if x_test is not None:
-		print("Best GBM model has MIMIC accuracy of {:.5f}".format(random_search.best_estimator_.score(
-					x_test, most_common_bnn_prediction(bnn_object, x_test, n_mc_samples))))
+		print("Best GBM model has MIMIC R^2 of {:.5f}".format(random_search.best_estimator_.score(
+					x_test, mean_bnn_prediction(bnn_object, x_test, n_mc_samples))))
 	if best_model_only:
 		return random_search.best_estimator_, cv_time
 	else:

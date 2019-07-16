@@ -1,15 +1,15 @@
 
 
 #####
-## January 11, 2019
-## Create figures from results in BNN COMPAS.ipynb.
+## Create figures from results in pull_data_fit_bnn.
 ## 
 ## Should have COMPAS_BNN_RATE.csv and 
 ##    COMPAS_BNN_RATE_multinomialResponse.csv saved to file.
 ## The former is `rate_data_csv` in the Jupyter notebook from running all cells twice: 
 ##  once with all variables, once with num. priors omitted, both times with multiclass flag = False.
 ## The latter is `rate_data_csv` in the Jupyter notebook, generated the same way but with 
-##  multiclass flag = True for both runs.
+##  multiclass flag = True for both runs, and kernel restarted between analysis for 
+##  multiclass flag = False and analysis for multiclass flag = True.
 #####
 
 library(gridExtra)
@@ -59,7 +59,7 @@ nomissing.df <- raw_data %>% dplyr::select(age, c_charge_degree, race, age_cat,
 
 nomissing.df['Race'] <- ifelse(nomissing.df$race == "Caucasian", "White", "Non-White")
 
-# --- RATE values from BNN - Binary (main text of paper)
+# --- RATE values from BNN - Binary
 # includes first order centrality, second order centrality (num priors --> null) 
 # and first order centrality when num priors is scrambled
 # This is `rate_data_csv` in the Jupyter notebook, created after running the notebook cells 
@@ -82,7 +82,13 @@ rate.dat.multi <- read.csv('COMPAS_BNN_RATE_multinomialResponse.csv')
 
 
 
-# --- Plot 1
+
+
+#####
+## S11 Plots
+#####
+
+# --- (A)
 # first order bar chart
 num.nullify = 0
 info <- info.func(rate.dat$rate_class0_1stOrder, num.pred=p, length.nullify=num.nullify )
@@ -132,7 +138,7 @@ plt
 
 
 
-# --- Plot 2
+# --- (B)
 # 2 histograms overlaying each other
 # white v. not-white
 # of prior counts
@@ -201,7 +207,9 @@ plt
 
 
 
-# --- Plot 3
+
+
+# --- (C)
 # first order bar chart, but num priors is omitted from analysis
 
 rate.dat.temp <- rate.dat[rate.dat$var_names != "priors_count", ]
@@ -253,7 +261,16 @@ plt
 
 
 
-# --- Plot 1 FOR SUPPLEMENTALS
+
+
+
+
+
+#####
+## S12 Plots
+#####
+
+# --- (A)
 # first order bar chart for Low / first order bars for Medium / First Order bars for High
 num.nullify = 0
 info <- sapply(0:2, function(response) {
@@ -321,7 +338,7 @@ grid.arrange(plt1, plt2, plt3, ncol=3)
 
 
 
-# --- Plot 2 FOR SUPPLEMENTALS
+# --- (B)
 # first order centrality WHEN NUM. PRIORS IS OMITTED
 # first order bar chart for Low / first order bars for Medium / First Order bars for High
 

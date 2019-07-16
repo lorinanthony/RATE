@@ -8,3 +8,4 @@ Each directory contains the code/notebooks used to generate the Figures in [Ish-
 * Figure 3 and S3 - MNIST (binary classification)
 * Figure S4 and S5 - MNIST (multiclass classification)
 * Figure S6 - IMDB Sentiment Analysis
+* Figures S11 and S12 - COMPAS (binary and multiclass classification)

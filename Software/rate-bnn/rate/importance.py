@@ -2,6 +2,9 @@ import numpy as np
 import multiprocessing as mp
 import time
 import warnings
+import rfpimp as rfp
+
+# TODO: make n_jobs/n_workers consistent across all of the code
 
 def compute_B(X, H, M_W, V_W, b, C, effect_size_analogue="covariance"):
 	"""
@@ -146,7 +149,7 @@ def groupRATE_sequential(mu_c, Lambda_c, groups, nullify=None):
 
 	KLD = [group_kld(group, idx) for idx, group in enumerate(groups)]
 	print("done")
-	return KLD / np.sum(KLD)
+	return KLD, KLD/np.sum(KLD)
 
 # Worker initialisation and function for groupRATE
 var_dict = {}
@@ -254,7 +257,7 @@ def RATE_BNN(bnn, X, groups=None, nullify=None, effect_size_analogue="covariance
 	"""
 	C = bnn.C
 	M_W, V_W, b = bnn.var_params()
-	H = bnn.compute_H(X)
+	H = bnn.H(X)
 
 	start_time = time.time()
 
@@ -285,3 +288,35 @@ def RATE_BNN(bnn, X, groups=None, nullify=None, effect_size_analogue="covariance
 		return out, rate_time, M_B, V_B
 	else:
 		return out, rate_time
+
+def perm_importances(model, X, y, features=None, n_examples=None, n_mc_samples=100):
+	"""
+	Calculate permutation importances for a BNN or its mimic. Also returns the time taken
+    so result is a 2-tuple (array of importance values, time)
+
+	Args:
+		model: a BNN_Classifier, RandomForestClassifier or GradientBoostingClassifier
+		X, y: examples and labels. The permutation importances are computed by shuffling columns
+			  of X and seeing how the prediction accuracy for y is affected
+		features: How many features to compute importances for. Default (None) is to compute
+				  for every feature. Otherwise use a list of integers
+		n_examples: How many examples to use in the computation. Default (None) uses all the
+					features. Otherwise choose a positive integer that is less than 
+					the number of rows of X/y.
+		n_mc_samples: number of MC samples (BNN only)
+
+	Returns a 1D array of permutation importance values in the same order as the columns of X
+	"""
+	X_df, y_df = pd.DataFrame(X), pd.DataFrame(y)
+	X_df.columns = X_df.columns.map(str) # rfpimp doesn't like integer column names
+
+	if n_examples is None:
+		n_examples = -1
+	start_time = time.time()
+	if isinstance(model, BNN_Classifier):
+		imp_vals = np.squeeze(rfp.importances(model, X_df, y_df,
+								metric=lambda model, X, y, sw: model.score(X, y, n_mc_samples, sample_weight=sw), n_samples=n_examples, sort=False).values)
+	elif isinstance(model, RandomForestClassifier) or isinstance(model, GradientBoostingClassifier):
+		imp_vals = np.squeeze(rfp.importances(model, X_df, y_df, n_samples=n_examples, sort=False).values)
+	time_taken = time.time() - start_time
+	return imp_vals, time_taken

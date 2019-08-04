@@ -9,6 +9,10 @@ from scipy.stats import rankdata
 import time
 import warnings
 
+def make_1d2d(arr):
+	assert arr.ndim == 1
+	return arr.reshape(arr.shape[0], 1)
+
 def onehot_encode_labels(y):
 	"""
 	One-hot encode integer labels y. The number of classes is assumed to be

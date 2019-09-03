@@ -4,9 +4,37 @@ import time
 import warnings
 import rfpimp as rfp
 
+from GPy.core import GP
+from .models import BnnBase
+
 # TODO: make n_jobs/n_workers consistent across all of the code
 
-def compute_B(X, H, M_W, V_W, b, C, effect_size_analogue="covariance"):
+def get_esa_posterior(model, X, projection):
+	if isinstance(model, BnnBase):
+		C = model.C
+		M_W, V_W, b = model.var_params()
+		H = model.H(X)
+		return esa_posterior_bnn(X, H, M_W, V_W, b, C, projection)
+	elif isinstance(model, GP):
+		return esa_posterior_gp(model, X)
+	else:
+		raise ValueError("Model type {} is not supported".format(type(model)))
+
+def esa_posterior_gp(gp, X, projection):
+	"""Regression/binary classification only
+	"""
+	M_F, V_F = gp.predict_f_full_cov(X)
+	if projection == "covariance":
+		M_F -= M_F.mean(axis=0)[np.newaxis,:] # Centering
+		X_c = X - X.mean(axis=0)[np.newaxis,:]
+		M_B = 1.0/(n-1.0) * np.matmul(X_C.T, M_F)
+		V_B = 1.0(n-1.0)**2.0 * np.matmul(np.matmul(X_c.T, V_F), X_c)
+	elif projection == "linear":
+		GenInv = np.linalg.pinv(X)
+		M_B = np.matmul(GenInv, M_F)
+		V_B = np.matmul(np.matmul(GenInv, V_F), GenInv.T)
+
+def esa_posterior_bnn(X, H, M_W, V_W, b, C, projection="covariance"):
 	"""
 	Compute the means and covariance of the effect size analogues B for a Bayesian neural network
 	described in (Ish-Horowicz et al., 2019)
@@ -15,10 +43,10 @@ def compute_B(X, H, M_W, V_W, b, C, effect_size_analogue="covariance"):
 		X: array of inputs with shape (n_examples, n_input_dimensions)
 		H: array of penultimate network layer outputs with shape (n_examples, final_hidden_layer_size)
 		M_W: Array of final weight matrix means with shape (final_hidden_layer_size, n_classes)
-		V_W: Array of final weight matrix variances with shape (final_hidden_layer_size, n_classes)
+		V_W: Array of final weight matrix variances with shape (final_hidden_layer_size, final_hidden_layer_size, n_classes)
 		b: Final layer (deterministic) bias
 		C: number of classes
-		effect_size_analogue: Projection operator for computing effect size analogues. Either "linear" (pseudoinverse) or "covariance" (default).
+		projection: Projection operator for computing effect size analogues. Either "linear" (pseudoinverse) or "covariance" (default).
 
 	Returns:
 		M_B: an array of means of B, the multivariate effect size analgoues, with shape (n_classes, n_pixels)
@@ -39,21 +67,20 @@ def compute_B(X, H, M_W, V_W, b, C, effect_size_analogue="covariance"):
 	V_F = np.array([np.matmul(H*V_W[:,c], H.T) for c in range(C)])
 
 	# Effect size analogues
-	if effect_size_analogue == 'covariance':
+	if projection == 'covariance':
 		# Centred logits
 		M_F_c = M_F - M_F.mean(axis=0)[np.newaxis,:]
 		V_F_c = V_F # NB ignoring the additional variance due to centering + 1.0/n**2.0 * V_F.mean(axis=0)
 		X_c = X - X.mean(axis=0)[np.newaxis,:]
 		M_B = 1.0/(n-1.0) * np.array([np.matmul(X_c.T, M_F_c[:,c]) for c in range(C)])
 		V_B = 1.0/(n-1.0)**2.0 * np.array([np.matmul(np.matmul(X_c.T, V_F_c[c,:,:]), X_c)for c in range(C)])
-	elif effect_size_analogue == 'linear': 
+	elif projection == 'linear': 
 		GenInv = np.linalg.pinv(X)
-		# GenInv = np.matmul(np.linalg.pinv(np.matmul(X.T, X)), X.T)
 		M_B_mat = np.matmul(GenInv, M_F)
-		M_B = np.array([M_B_mat[:, c] for c in range(C)])
+		M_B = np.array([M_B_mat[:, c] for c in range(C)]) # What does this line do?
 		V_B = np.array([np.matmul(np.matmul(GenInv, V_F[c, :, :]), GenInv.T) for c in range(C)])
 	else: 
-		raise ValueError("Unrecognised effect_size_analogue {}, please use `covariance` or `linear`".format(effect_size_analogue))
+		raise ValueError("Unrecognised projection {}, please use `covariance` or `linear`".format(projection))
 	    
 	return M_B, V_B
     
@@ -232,6 +259,7 @@ def groupRATE(mu_c, Lambda_c, groups, nullify=None, n_workers=1, filepath=None):
         result = np.array(pool.map(worker_func, [(group, idx, filepath) for idx, group in enumerate(groups)]))
     return result/result.sum()
 
+# TODO: THIS RETURNS AN ARRAY WITH AN EXTRA AXIS IF C=1
 def RATE_BNN(bnn, X, groups=None, nullify=None, effect_size_analogue="covariance",
 	n_workers=1, return_esa_posterior=False, filepath=None):
 	"""

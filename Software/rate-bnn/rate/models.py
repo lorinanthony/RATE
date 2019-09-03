@@ -23,7 +23,8 @@ from .utils import make_1d2d
 # TODO: replace fit checks with a decorator
 #
 def default_layers(p, C):
-	"""The default model
+	"""The default model layers - single 128-unit dense layer, batch normalization then a 
+	Bayesian DenseLocalReparameterization final layer.
 	"""
 	layers = []
 	layers.append(tf.keras.layers.Dense(128, activation='relu', input_shape=(p,)))
@@ -84,16 +85,22 @@ class BnnBase(BaseEstimator, metaclass=ABCMeta):
 		# TODO: separate loss and loss_samples methods?
 		"""
 		if n_mc_samples is None: n_mc_samples = self.n_mc_samples
-		loss_samples = np.array([self._logit_model.evaluate(X, y, verbose=self.verbose, **kwargs) for _ in range(n_mc_samples)])
+		loss_samples = np.array(
+			[self._logit_model.evaluate(X, y, verbose=self.verbose, **kwargs) for _ in range(n_mc_samples)])
 		if mean_only:
 			return loss_samples.mean(axis=0)
 		else:
 			return loss_samples
 
 	# Could make this protected
-	# TODO: check the correct exception to use here
 	def H(self, X, **kwargs):
-		"""The (deterministic) activation of the penultimate layer for a set of examples X
+		"""The (deterministic) activation of the penultimate layer for a set of examples X.
+
+		Args:
+			X: input with shape (n_examples, n_input_dimensions)
+
+		Returns:
+			H: activations of the penultimate network layer, an array with shape (n_examples, penultimate_layer_size)
 		"""
 		check_is_fitted(self, "_logit_model")
 		return self._hmodel.predict(X, verbose=self.verbose, **kwargs)
@@ -101,6 +108,13 @@ class BnnBase(BaseEstimator, metaclass=ABCMeta):
 	def var_params(self):
 		"""The variational parameters of the final layer weights (the bias is deterministic but is
 		is included with the weight posteriors as they are needed together to calculate RATE).
+
+		TODO: what happens to these shapes when variational posterior is not fully factorised?
+
+		Returns:
+			M_W: the means of the variational posterior, shape (penultimate layer size, final layer size)
+			V_W: the variances of the variational posterior, shape (penultimate layer size, final layer size)
+			b: deterministic bias of the final layer, shape (final layer size,)
 		"""
 		check_is_fitted(self, "_logit_model")
 		W1_loc, W1_scale, b = [K.eval(self._logit_model.layers[-1].kernel_posterior.distribution.loc),
@@ -108,6 +122,23 @@ class BnnBase(BaseEstimator, metaclass=ABCMeta):
 							   K.eval(self._logit_model.layers[-1].bias_posterior.distribution.loc)]
 		return W1_loc, np.square(W1_scale), b
 
+	# Should have the class index as the first index, so that we can use numpy broadcasting for the batch multiplication
+	def logit_posterior(self, X):
+		"""The means and covariance of the posterior over the logits. Calculated using the variational
+		posterior over the final layer weights.
+
+		TODO: shapes may break for C > 1
+
+		Returns:
+			logit_posterior, a 2-tuple containing:
+				1. an array of logit means with shape (n_classes, n_examples)
+				2. an array of logit covariances with shape (n_classes, n_examples, n_examples)
+		"""
+		H_X = self.H(X)
+		M_W, V_W, b = self.var_params()
+		M_F = np.matmul(H_X, M_W) + b[np.newaxis,:]
+		V_F = np.array([np.matmul(H_X*V_W[:,c], H_X.T) for c in range(self.C)])
+		return M_F.T, V_F
 
 	@abstractmethod
 	def _nll(self, labels, logits):

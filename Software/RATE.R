@@ -70,26 +70,39 @@ RATE = function(X = X, f.draws = f.draws,prop.var = 1, low.rank = FALSE, rank.r 
   
   if(length(l)>0){int = int[-l]}
   
-  if(nrow(X) < ncol(X)){
-    KLD = foreach(j = int, .combine='c')%dopar%{
-      q = unique(c(j,l))
-      m = abs(mu[q])
-      U_Lambda_sub = qr.solve(U[-q,],Lambda[-q,q,drop=FALSE])
-      kld = crossprod(U_Lambda_sub%*%m)/2
-      names(kld) = snp.nms[j]
-      kld
-    }
-  }else{
-    KLD = foreach(j = int, .combine='c')%dopar%{
-      q = unique(c(j,l))
-      m = mu[q]
-      alpha = t(Lambda[-q,q])%*%ginv(as.matrix(nearPD(Lambda[-q,-q])$mat))%*%Lambda[-q,q]
-      kld = (t(m)%*%alpha%*%m)/2
-      names(kld) = snp.nms[j]
-      kld
-    }
-  }
+  KLD = foreach(j = int, .combine='c')%dopar%{
+    q = unique(c(j,l))
+    m = abs(mu[q])
   
+    U_Lambda_sub = sherman_r(Lambda,V[,q],V[,q])
+    #U_Lambda_sub = U_Lambda_sub[-q,-q]
+    alpha = t(U_Lambda_sub[-q,q])%*%U_Lambda_sub[-q,-q]%*%U_Lambda_sub[-q,q]
+    kld = kld = (t(m)%*%alpha%*%m)/2
+    names(kld) = snp.nms[j]
+    kld
+  }
+  # 
+  # if(nrow(X) < ncol(X)){
+  #   KLD = foreach(j = int, .combine='c')%dopar%{
+  #     q = unique(c(j,l))
+  #     m = abs(mu[q])
+  #     
+  #     U_Lambda_sub = qr.solve(U[-q,],Lambda[-q,q,drop=FALSE])
+  #     kld = crossprod(U_Lambda_sub%*%m)/2
+  #     names(kld) = snp.nms[j]
+  #     kld
+  #   }
+  # }else{
+  #   KLD = foreach(j = int, .combine='c')%dopar%{
+  #     q = unique(c(j,l))
+  #     m = mu[q]
+  #     alpha = t(Lambda[-q,q])%*%ginv(as.matrix(nearPD(Lambda[-q,-q])$mat))%*%Lambda[-q,q]
+  #     kld = (t(m)%*%alpha%*%m)/2
+  #     names(kld) = snp.nms[j]
+  #     kld
+  #   }
+  # }
+  # 
   ### Compute the corresponding “RelATive cEntrality” (RATE) measure ###
   RATE = KLD/sum(KLD)
   
@@ -102,6 +115,10 @@ RATE = function(X = X, f.draws = f.draws,prop.var = 1, low.rank = FALSE, rank.r 
   
   ### Return a list of the values and results ###
   return(list("KLD"=KLD,"RATE"=RATE,"Delta"=Delta,"ESS"=ESS))
+}
+
+sherman_r <- function(Ap, u, v) {
+  Ap - (Ap %*% u %*% t(v) %*% Ap)/drop(1 + u %*% t(v) %*% Ap)
 }
 
 ### Define the Package ###

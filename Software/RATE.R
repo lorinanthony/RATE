@@ -50,7 +50,9 @@ RATE = function(X = X, f.draws = f.draws,prop.var = 1, low.rank = FALSE, rank.r 
   r = svd_Sigma_star$d > 1e-10
   U = t(ginv(v)) %*% with(svd_Sigma_star, t(1/sqrt(d[r])*t(u[,r])))
   
-  mu = v%*%u%*%colMeans(f.draws)
+  V = v%*%Sigma_star%*%t(v) #Variances
+  
+  mu = v%*%u%*%colMeans(f.draws) #Effect Size Analogues 
   }else{
     beta.draws = t(ginv(X)%*%t(f.draws))
     V = cov(beta.draws); #V = as.matrix(nearPD(V)$mat)
@@ -77,7 +79,7 @@ RATE = function(X = X, f.draws = f.draws,prop.var = 1, low.rank = FALSE, rank.r 
     U_Lambda_sub = sherman_r(Lambda,V[,q],V[,q])
     #U_Lambda_sub = U_Lambda_sub[-q,-q]
     alpha = t(U_Lambda_sub[-q,q])%*%U_Lambda_sub[-q,-q]%*%U_Lambda_sub[-q,q]
-    kld = kld = (t(m)%*%alpha%*%m)/2
+    kld = (t(m)%*%alpha%*%m)/2
     names(kld) = snp.nms[j]
     kld
   }
